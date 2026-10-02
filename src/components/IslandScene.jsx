@@ -8,6 +8,8 @@
 //
 // Props attendues :
 //   - cards        : tableau des cartes à représenter dans la scène
+//   - visibleCards : sous-ensemble de `cards` à afficher (recherche) ;
+//                    toutes les cartes si omis
 //   - selectedCard : carte actuellement révélée (ou null)
 //   - onStarClick  : callback(id) déclenché au clic sur une étoile/carte
 
@@ -34,7 +36,12 @@ function FloatingIsland() {
   );
 }
 
-export default function IslandScene({ cards, selectedCard, onStarClick }) {
+export default function IslandScene({
+  cards,
+  visibleCards,
+  selectedCard,
+  onStarClick,
+}) {
   return (
     <div style={{ position: "fixed", inset: 0 }}>
       <Canvas camera={{ position: [0, -2, 18], fov: 60, near: 0.1, far: 500 }}>
@@ -47,7 +54,11 @@ export default function IslandScene({ cards, selectedCard, onStarClick }) {
 
         <FloatingIsland />
         <Suspense fallback={null}>
-          <SkyScene cards={cards} onStarClick={onStarClick} />
+          <SkyScene
+            cards={cards}
+            visibleCards={visibleCards}
+            onStarClick={onStarClick}
+          />
         </Suspense>
         <CameraController />
       </Canvas>

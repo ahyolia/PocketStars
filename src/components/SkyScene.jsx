@@ -6,14 +6,18 @@
 // onStarClick(card.id).
 //
 // Props attendues :
-//   - cards       : tableau de cartes { id, localId, name }
-//   - onStarClick : callback(id) déclenché au clic sur une étoile
+//   - cards        : tableau de cartes { id, localId, name } du tirage courant
+//   - visibleCards : sous-ensemble de `cards` à afficher (ex. résultat d'une
+//                    recherche) ; toutes les cartes si omis
+//   - onStarClick  : callback(id) déclenché au clic sur une étoile
 //
 // Les positions sont tirées aléatoirement dans une coque hémisphérique
 // au-dessus de l'île, et mémoïsées sur `cards` : elles restent stables entre
-// les re-renders et ne sont recalculées que lorsque la liste change (shuffle).
+// les re-renders et ne sont recalculées que lorsque le tirage change
+// (shuffle). Filtrer via `visibleCards` masque des étoiles sans déplacer les
+// autres.
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useGLTF } from "@react-three/drei";
 import { Matrix4, Vector3 } from "three";
 
@@ -69,6 +73,16 @@ function Star({ id, position, geometry, onStarClick }) {
   const [hovered, setHovered] = useState(false);
   const color = hovered ? STAR_HOVER_COLOR : STAR_COLOR;
 
+  // Curseur "main" tant que l'étoile est survolée ; le nettoyage le rétablit
+  // aussi si l'étoile disparaît pendant le survol (filtre, shuffle).
+  useEffect(() => {
+    if (!hovered) return;
+    document.body.style.cursor = "pointer";
+    return () => {
+      document.body.style.cursor = "";
+    };
+  }, [hovered]);
+
   return (
     <mesh
       position={position}
@@ -81,12 +95,8 @@ function Star({ id, position, geometry, onStarClick }) {
       onPointerOver={(e) => {
         e.stopPropagation();
         setHovered(true);
-        document.body.style.cursor = "pointer";
       }}
-      onPointerOut={() => {
-        setHovered(false);
-        document.body.style.cursor = "";
-      }}
+      onPointerOut={() => setHovered(false)}
     >
       <meshStandardMaterial
         color={color}
@@ -98,7 +108,7 @@ function Star({ id, position, geometry, onStarClick }) {
   );
 }
 
-export default function SkyScene({ cards = [], onStarClick }) {
+export default function SkyScene({ cards = [], visibleCards, onStarClick }) {
   const geometry = useStarGeometry();
 
   const stars = useMemo(
@@ -106,9 +116,17 @@ export default function SkyScene({ cards = [], onStarClick }) {
     [cards]
   );
 
+  const visibleIds = useMemo(
+    () => (visibleCards ? new Set(visibleCards.map((card) => card.id)) : null),
+    [visibleCards]
+  );
+  const shownStars = visibleIds
+    ? stars.filter((star) => visibleIds.has(star.id))
+    : stars;
+
   return (
     <group>
-      {stars.map((star) => (
+      {shownStars.map((star) => (
         <Star
           key={star.id}
           id={star.id}

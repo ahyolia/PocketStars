@@ -1,0 +1,73 @@
+/* Bande pleine largeur transparente aux clics : seul le panneau les capte,
+   pour ne pas bloquer la caméra ni les étoiles autour. */
+.search-bar {
+  position: fixed;
+  top: 16px;
+  left: 0;
+  right: 0;
+  z-index: 5;
+  display: flex;
+  justify-content: center;
+  padding: 0 16px;
+  pointer-events: none;
+}
+
+.search-bar__panel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 480px;
+  box-sizing: border-box;
+  padding: 6px;
+  border: 1px solid #3a3570;
+  border-radius: 999px;
+  background: rgba(22, 20, 46, 0.85);
+  backdrop-filter: blur(6px);
+  pointer-events: auto;
+}
+
+.search-bar__input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  color: #d8d6f0;
+  font: inherit;
+  font-size: 16px;
+  outline: none;
+}
+
+.search-bar__input::placeholder {
+  color: rgba(216, 214, 240, 0.5);
+}
+
+.search-bar__count {
+  flex-shrink: 0;
+  font-size: 14px;
+  color: rgba(216, 214, 240, 0.7);
+}
+
+.search-bar__panel button {
+  flex-shrink: 0;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 999px;
+  background: #f5d94a;
+  color: #16142e;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.search-bar__panel button:hover {
+  background: #fff3b0;
+}
+
+.search-bar__panel button:focus-visible,
+.search-bar__input:focus-visible {
+  outline: 2px solid #f5d94a;
+  outline-offset: 2px;
+}

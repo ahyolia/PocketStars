@@ -15,7 +15,11 @@ function App() {
 
   return (
     <>
-      <IslandScene cards={cards} onStarClick={selectCard} />
+      <IslandScene
+        cards={cards}
+        selectedCard={selectedCard}
+        onStarClick={selectCard}
+      />
       <CardReveal
         card={selectedCard}
         loading={selectedCardLoading}

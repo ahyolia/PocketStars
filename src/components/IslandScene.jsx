@@ -2,19 +2,20 @@
 //
 // Conteneur Three.js / @react-three/fiber de la scène principale : une île
 // flottante qui héberge les cartes affichées sous forme d'étoiles/objets
-// interactifs. Orchestre CameraController (caméra libre) et SkyScene (le ciel
-// étoilé). SkyAtmosphere sera branché dans une étape ultérieure.
+// interactifs. Orchestre CameraController (caméra libre), SkyScene (le ciel
+// étoilé) et SkyAtmosphere (fond, brouillard et lumière ambiante selon le
+// type de la carte sélectionnée).
 //
 // Props attendues :
-//   - cards       : tableau des cartes à représenter dans la scène
-//   - onStarClick : callback(id) déclenché au clic sur une étoile/carte
+//   - cards        : tableau des cartes à représenter dans la scène
+//   - selectedCard : carte actuellement révélée (ou null)
+//   - onStarClick  : callback(id) déclenché au clic sur une étoile/carte
 
 import { Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
 import CameraController from "./CameraController";
+import SkyAtmosphere from "./SkyAtmosphere";
 import SkyScene from "./SkyScene";
-
-const BACKGROUND_COLOR = "#0b0a1f";
 
 function FloatingIsland() {
   return (
@@ -33,14 +34,11 @@ function FloatingIsland() {
   );
 }
 
-export default function IslandScene({ cards, onStarClick }) {
+export default function IslandScene({ cards, selectedCard, onStarClick }) {
   return (
     <div style={{ position: "fixed", inset: 0 }}>
       <Canvas camera={{ position: [0, -2, 18], fov: 60, near: 0.1, far: 500 }}>
-        <color attach="background" args={[BACKGROUND_COLOR]} />
-        <fog attach="fog" args={[BACKGROUND_COLOR, 30, 80]} />
-
-        <ambientLight color="#6a6ab8" intensity={1.6} />
+        <SkyAtmosphere selectedCard={selectedCard} />
         <directionalLight
           color="#8f9cff"
           intensity={2.5}

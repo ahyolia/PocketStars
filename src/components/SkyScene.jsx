@@ -16,10 +16,19 @@
 // les re-renders et ne sont recalculées que lorsque le tirage change
 // (shuffle). Filtrer via `visibleCards` masque des étoiles sans déplacer les
 // autres.
+//
+// Pour un ciel vivant : chaque étoile flotte, tourne sur elle-même et
+// scintille à son propre rythme, l'ensemble tourne très lentement autour de
+// l'île, et des étoiles filantes décoratives (ShootingStars) traversent le
+// fond devant un champ d'étoiles lointaines. Si l'utilisateur a demandé à
+// réduire les animations, rotation du ciel et étoiles filantes sont coupées.
 
-import { useEffect, useMemo, useState } from "react";
-import { useGLTF } from "@react-three/drei";
-import { Matrix4, Vector3 } from "three";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useFrame } from "@react-three/fiber";
+import { Stars, useGLTF } from "@react-three/drei";
+import { MathUtils, Matrix4, Vector3 } from "three";
+import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
+import ShootingStars from "./ShootingStars";
 
 // Modèle 3D : "Star" by J-Toastie [CC-BY 3.0] via Poly Pizza
 // https://poly.pizza/m/CeJcPl217O
@@ -34,6 +43,14 @@ const STAR_SIZE = 0.7;
 
 const STAR_COLOR = "#f5d94a";
 const STAR_HOVER_COLOR = "#fff3b0";
+
+// Rotation du ciel autour de l'île (rad/s) : un tour en ~7 minutes, assez
+// lent pour que les étoiles restent faciles à cliquer.
+const SKY_ROTATION_SPEED = 0.015;
+
+// Animation propre à chaque étoile.
+const BOB_AMPLITUDE = 0.35;
+const HOVER_SCALE = 1.4;
 
 // Extrait la géométrie du modèle, y applique la transformation de son nœud
 // (échelle/rotation exportées depuis FBX), puis la recentre et la normalise
@@ -69,9 +86,35 @@ function randomPositionInDome() {
   ];
 }
 
-function Star({ id, position, geometry, onStarClick }) {
+// Paramètres d'animation aléatoires, tirés une fois par étoile pour que
+// toutes ne bougent pas à l'unisson.
+function randomMotion() {
+  return {
+    phase: Math.random() * Math.PI * 2,
+    bobSpeed: 0.4 + Math.random() * 0.5,
+    spinSpeed: (0.2 + Math.random() * 0.4) * (Math.random() < 0.5 ? -1 : 1),
+    twinkleSpeed: 1 + Math.random() * 2,
+  };
+}
+
+function Star({ id, position, motion, geometry, onStarClick }) {
   const [hovered, setHovered] = useState(false);
   const color = hovered ? STAR_HOVER_COLOR : STAR_COLOR;
+  const meshRef = useRef();
+
+  useFrame((state, delta) => {
+    const mesh = meshRef.current;
+    const t = state.clock.elapsedTime;
+    mesh.position.y = Math.sin(t * motion.bobSpeed + motion.phase) * BOB_AMPLITUDE;
+    mesh.rotation.y += motion.spinSpeed * delta;
+    mesh.scale.setScalar(
+      MathUtils.damp(mesh.scale.x, hovered ? HOVER_SCALE : 1, 12, delta)
+    );
+    // Scintillement : variation douce de la luminosité.
+    mesh.material.emissiveIntensity = hovered
+      ? 1.5
+      : 0.8 + 0.35 * Math.sin(t * motion.twinkleSpeed + motion.phase);
+  });
 
   // Curseur "main" tant que l'étoile est survolée ; le nettoyage le rétablit
   // aussi si l'étoile disparaît pendant le survol (filtre, shuffle).
@@ -84,37 +127,44 @@ function Star({ id, position, geometry, onStarClick }) {
   }, [hovered]);
 
   return (
-    <mesh
-      position={position}
-      geometry={geometry}
-      scale={hovered ? 1.4 : 1}
-      onClick={(e) => {
-        e.stopPropagation();
-        onStarClick?.(id);
-      }}
-      onPointerOver={(e) => {
-        e.stopPropagation();
-        setHovered(true);
-      }}
-      onPointerOut={() => setHovered(false)}
-    >
-      <meshStandardMaterial
-        color={color}
-        emissive={color}
-        emissiveIntensity={hovered ? 1.5 : 0.8}
-        roughness={0.6}
-      />
-    </mesh>
+    <group position={position}>
+      <mesh
+        ref={meshRef}
+        geometry={geometry}
+        onClick={(e) => {
+          e.stopPropagation();
+          onStarClick?.(id);
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          setHovered(true);
+        }}
+        onPointerOut={() => setHovered(false)}
+      >
+        <meshStandardMaterial color={color} emissive={color} roughness={0.6} />
+      </mesh>
+    </group>
   );
 }
 
 export default function SkyScene({ cards = [], visibleCards, onStarClick }) {
   const geometry = useStarGeometry();
+  const reducedMotion = usePrefersReducedMotion();
+  const skyRef = useRef();
 
   const stars = useMemo(
-    () => cards.map((card) => ({ id: card.id, position: randomPositionInDome() })),
+    () =>
+      cards.map((card) => ({
+        id: card.id,
+        position: randomPositionInDome(),
+        motion: randomMotion(),
+      })),
     [cards]
   );
+
+  useFrame((_, delta) => {
+    if (!reducedMotion) skyRef.current.rotation.y += SKY_ROTATION_SPEED * delta;
+  });
 
   const visibleIds = useMemo(
     () => (visibleCards ? new Set(visibleCards.map((card) => card.id)) : null),
@@ -125,17 +175,32 @@ export default function SkyScene({ cards = [], visibleCards, onStarClick }) {
     : stars;
 
   return (
-    <group>
-      {shownStars.map((star) => (
-        <Star
-          key={star.id}
-          id={star.id}
-          position={star.position}
-          geometry={geometry}
-          onStarClick={onStarClick}
-        />
-      ))}
-    </group>
+    <>
+      {/* Champ d'étoiles lointaines, pour la profondeur. */}
+      <Stars
+        radius={70}
+        depth={40}
+        count={3000}
+        factor={3}
+        saturation={0}
+        fade
+        speed={reducedMotion ? 0 : 0.6}
+      />
+      {!reducedMotion && <ShootingStars />}
+
+      <group ref={skyRef}>
+        {shownStars.map((star) => (
+          <Star
+            key={star.id}
+            id={star.id}
+            position={star.position}
+            motion={star.motion}
+            geometry={geometry}
+            onStarClick={onStarClick}
+          />
+        ))}
+      </group>
+    </>
   );
 }
 

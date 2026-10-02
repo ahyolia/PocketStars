@@ -9,8 +9,12 @@
 // doucement. L'utilisateur peut la faire pivoter à la souris
 // (PresentationControls) ; elle revient de face au relâchement.
 //
+// Les cartes rares reçoivent un calque holographique sur le recto
+// (holoMaterial.js), dont l'intensité dépend de la rareté (rarities.js).
+//
 // Props attendues :
-//   - card    : détail de la carte (TCGdex) ; seuls image et name sont lus
+//   - card    : détail de la carte (TCGdex) ; seuls image, name et rarity
+//               sont lus
 //   - onReady : callback appelé une fois la texture du recto chargée
 
 import { useEffect, useMemo, useRef } from "react";
@@ -23,6 +27,8 @@ import {
   ShapeGeometry,
   SRGBColorSpace,
 } from "three";
+import { getHoloStrength } from "../constants/rarities";
+import { createHoloMaterial } from "./holoMaterial";
 
 // Proportions d'une carte Pokémon (63 × 88 mm).
 const CARD_WIDTH = 2.5;
@@ -171,7 +177,28 @@ function createPlaceholderTexture(name) {
 
 const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
 
-function CardMesh({ front, onReady }) {
+// Calque holographique additif, juste devant le recto.
+function HoloLayer({ geometry, map, strength }) {
+  const material = useMemo(() => createHoloMaterial(map, strength), [map, strength]);
+  const meshRef = useRef();
+
+  useEffect(() => () => material.dispose(), [material]);
+
+  useFrame((state) => {
+    meshRef.current.material.uniforms.uTime.value = state.clock.elapsedTime;
+  });
+
+  return (
+    <mesh
+      ref={meshRef}
+      geometry={geometry}
+      material={material}
+      position={[0, 0, CARD_THICKNESS / 2 + 0.002]}
+    />
+  );
+}
+
+function CardMesh({ front, holoStrength, onReady }) {
   const { face, edge } = useMemo(() => createCardGeometries(), []);
   const back = useMemo(() => createBackTexture(), []);
   const groupRef = useRef();
@@ -230,6 +257,9 @@ function CardMesh({ front, onReady }) {
           <mesh geometry={face} position={[0, 0, CARD_THICKNESS / 2 + 0.001]}>
             <meshStandardMaterial map={front} roughness={0.45} toneMapped={false} />
           </mesh>
+          {holoStrength > 0 && (
+            <HoloLayer geometry={face} map={front} strength={holoStrength} />
+          )}
           <mesh
             geometry={face}
             position={[0, 0, -CARD_THICKNESS / 2 - 0.001]}
@@ -243,23 +273,29 @@ function CardMesh({ front, onReady }) {
   );
 }
 
-function ImageCard({ url, onReady }) {
+function ImageCard({ url, ...props }) {
   const texture = useTexture(url);
-  return <CardMesh front={texture} onReady={onReady} />;
+  return <CardMesh front={texture} {...props} />;
 }
 
-function PlaceholderCard({ name, onReady }) {
+function PlaceholderCard({ name, ...props }) {
   const texture = useMemo(() => createPlaceholderTexture(name), [name]);
   useEffect(() => () => texture.dispose(), [texture]);
-  return <CardMesh front={texture} onReady={onReady} />;
+  return <CardMesh front={texture} {...props} />;
 }
 
 export default function Card3D({ card, onReady }) {
+  const holoStrength = getHoloStrength(card.rarity);
+
   // TCGdex fournit une URL de base sans extension : la qualité et le format
   // s'ajoutent en suffixe.
   return card.image ? (
-    <ImageCard url={`${card.image}/high.webp`} onReady={onReady} />
+    <ImageCard
+      url={`${card.image}/high.webp`}
+      holoStrength={holoStrength}
+      onReady={onReady}
+    />
   ) : (
-    <PlaceholderCard name={card.name} onReady={onReady} />
+    <PlaceholderCard name={card.name} holoStrength={holoStrength} onReady={onReady} />
   );
 }

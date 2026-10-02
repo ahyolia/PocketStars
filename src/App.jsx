@@ -29,7 +29,6 @@ function App() {
       <IslandScene
         cards={cards}
         visibleCards={filteredCards}
-        selectedCard={selectedCard}
         onStarClick={selectCard}
       />
       <SearchBar

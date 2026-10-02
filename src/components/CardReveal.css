@@ -5,7 +5,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Voile léger : laisse voir l'ambiance du ciel (SkyAtmosphere) derrière. */
+  /* Voile léger : laisse voir le ciel étoilé derrière la carte. */
   background: rgba(8, 6, 24, 0.3);
   color: #d8d6f0;
   text-align: center;

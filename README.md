@@ -32,3 +32,9 @@ npm run dev
 
 🚧 Projet en phase de développement actif : l'intégration 3D et les
 fonctionnalités décrites ci-dessus sont en cours de construction.
+
+## Crédits
+
+- Modèle 3D d'étoile : ["Star"](https://poly.pizza/m/CeJcPl217O) by J-Toastie
+  [CC-BY](https://creativecommons.org/licenses/by/3.0/) via
+  [Poly Pizza](https://poly.pizza/m/CeJcPl217O)

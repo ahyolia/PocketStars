@@ -10,11 +10,16 @@
 //     dans la pool (sans doublons).
 //   - `shuffle()` re-tire un nouveau sous-ensemble de 50 cartes depuis la
 //     pool déjà en mémoire, sans nouvel appel réseau.
+//   - `selectCard(id)` récupère le détail complet d'une carte (types, image,
+//     rareté…) avec un loading/error dédiés, indépendants de ceux de la pool.
+//   - `clearSelectedCard()` referme la carte sélectionnée.
 //
-// Retourne : { cards, loading, error, selectedCard, shuffle }
+// Retourne : { cards, loading, error, shuffle, selectedCard,
+//              selectedCardLoading, selectedCardError, selectCard,
+//              clearSelectedCard }
 
-import { useState, useEffect, useCallback } from "react";
-import { fetchCards } from "../services/tcgdexApi";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { fetchCards, fetchCardById } from "../services/tcgdexApi";
 
 const POOL_SIZE = 250;
 const DISPLAY_SIZE = 50;
@@ -27,14 +32,21 @@ function pickRandomSubset(pool, count) {
 export function useCards() {
   const [pool, setPool] = useState([]);
   const [displayedCards, setDisplayedCards] = useState([]);
-  const [loading, setLoading] = useState(false);
+  // Initialisé à true : le chargement de la pool démarre dès le montage, ce
+  // qui évite un setLoading(true) synchrone dans l'effet.
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedCard] = useState(null);
+
+  const [selectedCard, setSelectedCard] = useState(null);
+  const [selectedCardLoading, setSelectedCardLoading] = useState(false);
+  const [selectedCardError, setSelectedCardError] = useState(null);
+  // Numéro de la dernière requête de détail : permet d'ignorer une réponse
+  // arrivée après un autre clic ou après une fermeture.
+  const selectRequestRef = useRef(0);
 
   useEffect(() => {
     let cancelled = false;
 
-    setLoading(true);
     fetchCards({ "pagination:page": 1, "pagination:itemsPerPage": POOL_SIZE })
       .then(({ data }) => {
         if (cancelled) return;
@@ -59,5 +71,41 @@ export function useCards() {
     setDisplayedCards(pickRandomSubset(pool, DISPLAY_SIZE));
   }, [pool]);
 
-  return { cards: displayedCards, loading, error, selectedCard, shuffle };
+  const selectCard = useCallback(async (id) => {
+    const requestId = ++selectRequestRef.current;
+    const isLatest = () => requestId === selectRequestRef.current;
+
+    setSelectedCard(null);
+    setSelectedCardError(null);
+    setSelectedCardLoading(true);
+
+    try {
+      const { data } = await fetchCardById(id);
+      if (!data) throw new Error(`Carte introuvable : ${id}`);
+      if (isLatest()) setSelectedCard(data);
+    } catch (err) {
+      if (isLatest()) setSelectedCardError(err);
+    } finally {
+      if (isLatest()) setSelectedCardLoading(false);
+    }
+  }, []);
+
+  const clearSelectedCard = useCallback(() => {
+    selectRequestRef.current++;
+    setSelectedCard(null);
+    setSelectedCardError(null);
+    setSelectedCardLoading(false);
+  }, []);
+
+  return {
+    cards: displayedCards,
+    loading,
+    error,
+    shuffle,
+    selectedCard,
+    selectedCardLoading,
+    selectedCardError,
+    selectCard,
+    clearSelectedCard,
+  };
 }

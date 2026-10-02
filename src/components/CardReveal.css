@@ -1,0 +1,117 @@
+.card-reveal {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(8, 6, 24, 0.7);
+  animation: card-reveal-fade 0.35s ease-out;
+}
+
+.card-reveal__panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 360px;
+  max-height: 100%;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 24px;
+  border: 1px solid #3a3570;
+  border-radius: 16px;
+  background: #16142e;
+  color: #d8d6f0;
+  text-align: center;
+  box-shadow: 0 0 40px rgba(245, 217, 74, 0.25);
+}
+
+.card-reveal__close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.card-reveal__close:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.card-reveal__image {
+  width: 100%;
+  max-width: 280px;
+  aspect-ratio: 63 / 88;
+  border-radius: 12px;
+  object-fit: contain;
+}
+
+.card-reveal__image--missing {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border: 1px dashed #3a3570;
+}
+
+.card-reveal__name {
+  margin: 0;
+  font-size: 24px;
+  color: #f5d94a;
+}
+
+.card-reveal__details {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 4px 12px;
+  margin: 0;
+}
+
+.card-reveal__details dt {
+  text-align: right;
+  opacity: 0.7;
+}
+
+.card-reveal__details dd {
+  margin: 0;
+  text-align: left;
+}
+
+.card-reveal__status {
+  padding: 32px 0;
+}
+
+.card-reveal__error {
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+.card-reveal__spinner {
+  width: 40px;
+  height: 40px;
+  margin: 0 auto 12px;
+  border: 3px solid rgba(245, 217, 74, 0.25);
+  border-top-color: #f5d94a;
+  border-radius: 50%;
+  animation: card-reveal-spin 0.8s linear infinite;
+}
+
+@keyframes card-reveal-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes card-reveal-spin {
+  to { transform: rotate(360deg); }
+}

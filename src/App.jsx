@@ -24,12 +24,16 @@ function App() {
     return cards.filter((card) => card.name?.toLowerCase().includes(query))
   }, [cards, search])
 
+  // Pas de déplacement dans la scène pendant la révélation d'une carte.
+  const isRevealOpen = Boolean(selectedCard || selectedCardLoading || selectedCardError)
+
   return (
     <>
       <IslandScene
         cards={cards}
         visibleCards={filteredCards}
         onStarClick={selectCard}
+        controlsEnabled={!isRevealOpen}
       />
       <SearchBar
         value={search}

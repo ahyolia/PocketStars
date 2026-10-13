@@ -1,46 +1,45 @@
 // IslandScene.jsx
 //
 // Conteneur Three.js / @react-three/fiber de la scène principale : une île
-// flottante qui héberge les cartes affichées sous forme d'étoiles/objets
-// interactifs. Orchestre CameraController (caméra libre) et SkyScene (le ciel
-// étoilé).
+// flottante sur laquelle le joueur marche à la première personne, sous un
+// ciel où les cartes sont représentées par des étoiles interactives.
+// Orchestre FloatingIsland (le sol), CameraController (déplacement et
+// regard) et SkyScene (le ciel étoilé), et affiche un rappel des commandes
+// jusqu'au premier déplacement.
 //
 // Props attendues :
-//   - cards        : tableau des cartes à représenter dans la scène
-//   - visibleCards : sous-ensemble de `cards` à afficher (recherche) ;
-//                    toutes les cartes si omis
-//   - onStarClick  : callback(id) déclenché au clic sur une étoile/carte
+//   - cards          : tableau des cartes à représenter dans la scène
+//   - visibleCards   : sous-ensemble de `cards` à afficher (recherche) ;
+//                      toutes les cartes si omis
+//   - onStarClick    : callback(id) déclenché au clic sur une étoile/carte
+//   - controlsEnabled: false pour bloquer déplacement et regard (ex. pendant
+//                      la révélation d'une carte)
 
-import { Suspense } from "react";
+import { Suspense, useCallback, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import CameraController from "./CameraController";
+import FloatingIsland from "./FloatingIsland";
 import SkyScene from "./SkyScene";
+import { EYE_HEIGHT } from "../constants/world";
+import "./IslandScene.css";
 
 const BACKGROUND_COLOR = "#0b0a1f";
 
-function FloatingIsland() {
-  return (
-    <group>
-      {/* Plateau supérieur */}
-      <mesh position={[0, 0, 0]}>
-        <cylinderGeometry args={[6, 5.5, 1, 48]} />
-        <meshStandardMaterial color="#5a6c94" roughness={0.9} />
-      </mesh>
-      {/* Base rocheuse en cône inversé */}
-      <mesh position={[0, -2.5, 0]} rotation={[Math.PI, 0, 0]}>
-        <coneGeometry args={[5.5, 4, 48]} />
-        <meshStandardMaterial color="#4a3d6e" roughness={1} />
-      </mesh>
-    </group>
-  );
-}
+export default function IslandScene({
+  cards,
+  visibleCards,
+  onStarClick,
+  controlsEnabled = true,
+}) {
+  const [showHint, setShowHint] = useState(true);
+  const hideHint = useCallback(() => setShowHint(false), []);
 
-export default function IslandScene({ cards, visibleCards, onStarClick }) {
   return (
-    <div style={{ position: "fixed", inset: 0 }}>
-      <Canvas camera={{ position: [0, -2, 18], fov: 60, near: 0.1, far: 500 }}>
+    <div className="island-scene">
+      <Canvas camera={{ position: [0, EYE_HEIGHT, 14], fov: 70, near: 0.1, far: 500 }}>
         <color attach="background" args={[BACKGROUND_COLOR]} />
-        <fog attach="fog" args={[BACKGROUND_COLOR, 30, 80]} />
+        {/* Le brouillard fond l'horizon de l'île dans le ciel. */}
+        <fog attach="fog" args={[BACKGROUND_COLOR, 25, 90]} />
 
         <ambientLight color="#6a6ab8" intensity={1.6} />
         <directionalLight
@@ -57,8 +56,16 @@ export default function IslandScene({ cards, visibleCards, onStarClick }) {
             onStarClick={onStarClick}
           />
         </Suspense>
-        <CameraController />
+        <CameraController enabled={controlsEnabled} onFirstMove={hideHint} />
       </Canvas>
+
+      <p className={`island-scene__hint${showHint ? "" : " is-hidden"}`}>
+        <kbd>Z</kbd><kbd>Q</kbd><kbd>S</kbd><kbd>D</kbd> ou flèches pour marcher
+        <span aria-hidden="true"> · </span>
+        souris vers les bords pour regarder autour
+        <span aria-hidden="true"> · </span>
+        clic sur une étoile pour la révéler
+      </p>
     </div>
   );
 }

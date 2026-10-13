@@ -34,11 +34,12 @@ const TRAIL_LENGTH = 7;
 const TRAIL_WIDTH = 0.2;
 const HEAD_SIZE = 1.4;
 
-// Zone d'apparition : coque derrière les étoiles-cartes, au-dessus de l'île.
-const MIN_RADIUS = 28;
-const MAX_RADIUS = 38;
-const MIN_HEIGHT = 10;
-const MAX_HEIGHT = 26;
+// Zone d'apparition, autour du joueur : plus loin et plus haut que les
+// étoiles-cartes, pour passer derrière elles.
+const MIN_RADIUS = 45;
+const MAX_RADIUS = 60;
+const MIN_HEIGHT = 22;
+const MAX_HEIGHT = 40;
 
 const COLOR = [1, 0.96, 0.82]; // blanc chaud
 
@@ -77,17 +78,19 @@ function createTrailGeometry() {
 // Écart maximal (rad) entre le point d'apparition et la direction regardée.
 const SPAWN_SPREAD = 0.9;
 
-// Tire une nouvelle trajectoire : départ dans la coque, du côté où regarde
-// la caméra (pour que l'étoile filante soit visible même après avoir fait
-// tourner la vue), direction descendante et globalement tangente au dôme.
+// Tire une nouvelle trajectoire : départ à distance du joueur, du côté où il
+// regarde (pour que l'étoile filante soit visible où qu'il soit et quelle
+// que soit son orientation), direction descendante et globalement
+// tangente à son champ de vision.
 function spawn(state, camera) {
-  const facing = Math.atan2(-camera.position.z, -camera.position.x);
+  camera.getWorldDirection(state.direction);
+  const facing = Math.atan2(state.direction.z, state.direction.x);
   const theta = facing + randomBetween(-SPAWN_SPREAD, SPAWN_SPREAD);
   const radius = randomBetween(MIN_RADIUS, MAX_RADIUS);
   state.start.set(
-    radius * Math.cos(theta),
+    camera.position.x + radius * Math.cos(theta),
     randomBetween(MIN_HEIGHT, MAX_HEIGHT),
-    radius * Math.sin(theta)
+    camera.position.z + radius * Math.sin(theta)
   );
   const tangent = new Vector3(-Math.sin(theta), 0, Math.cos(theta));
   if (Math.random() < 0.5) tangent.negate();

@@ -34,12 +34,16 @@ import ShootingStars from "./ShootingStars";
 // https://poly.pizza/m/CeJcPl217O
 const STAR_MODEL_URL = encodeURI("/models/Star by J-Toastie - CeJcPl217O.glb");
 
-const MIN_RADIUS = 10;
-const MAX_RADIUS = 22;
-const MIN_HEIGHT = 3;
+// Dôme d'étoiles au-dessus de l'île, assez large pour qu'il y ait des étoiles
+// au-dessus du joueur où qu'il marche, et assez haut pour passer au-dessus
+// de sa tête.
+const MIN_RADIUS = 14;
+const MAX_RADIUS = 40;
+const MIN_HEIGHT = 6;
 
-// Taille (plus grande dimension) d'une étoile dans la scène.
-const STAR_SIZE = 0.7;
+// Taille (plus grande dimension) d'une étoile dans la scène : assez grosse
+// pour rester facile à cliquer de loin.
+const STAR_SIZE = 1.1;
 
 const STAR_COLOR = "#f5d94a";
 const STAR_HOVER_COLOR = "#fff3b0";
@@ -51,6 +55,10 @@ const SKY_ROTATION_SPEED = 0.015;
 // Animation propre à chaque étoile.
 const BOB_AMPLITUDE = 0.35;
 const HOVER_SCALE = 1.4;
+
+// Rayon de la zone de clic invisible autour de chaque étoile, un peu plus
+// grande que l'étoile elle-même.
+const HIT_RADIUS = STAR_SIZE * 0.75;
 
 // Extrait la géométrie du modèle, y applique la transformation de son nœud
 // (échelle/rotation exportées depuis FBX), puis la recentre et la normalise
@@ -97,19 +105,25 @@ function randomMotion() {
   };
 }
 
+// Le modèle ne capte pas les clics lui-même : vue de profil pendant sa
+// rotation, l'étoile n'est qu'un mince filet, presque impossible à viser.
+const ignoreRaycast = () => null;
+
 function Star({ id, position, motion, geometry, onStarClick }) {
   const [hovered, setHovered] = useState(false);
   const color = hovered ? STAR_HOVER_COLOR : STAR_COLOR;
+  const bodyRef = useRef();
   const meshRef = useRef();
 
   useFrame((state, delta) => {
+    const body = bodyRef.current;
     const mesh = meshRef.current;
     const t = state.clock.elapsedTime;
-    mesh.position.y = Math.sin(t * motion.bobSpeed + motion.phase) * BOB_AMPLITUDE;
-    mesh.rotation.y += motion.spinSpeed * delta;
-    mesh.scale.setScalar(
-      MathUtils.damp(mesh.scale.x, hovered ? HOVER_SCALE : 1, 12, delta)
+    body.position.y = Math.sin(t * motion.bobSpeed + motion.phase) * BOB_AMPLITUDE;
+    body.scale.setScalar(
+      MathUtils.damp(body.scale.x, hovered ? HOVER_SCALE : 1, 12, delta)
     );
+    mesh.rotation.y += motion.spinSpeed * delta;
     // Scintillement : variation douce de la luminosité.
     mesh.material.emissiveIntensity = hovered
       ? 1.5
@@ -128,9 +142,10 @@ function Star({ id, position, motion, geometry, onStarClick }) {
 
   return (
     <group position={position}>
-      <mesh
-        ref={meshRef}
-        geometry={geometry}
+      {/* Corps de l'étoile : flotte et grossit au survol. Les événements
+          viennent de la zone de clic et remontent jusqu'à ce groupe. */}
+      <group
+        ref={bodyRef}
         onClick={(e) => {
           e.stopPropagation();
           onStarClick?.(id);
@@ -141,8 +156,17 @@ function Star({ id, position, motion, geometry, onStarClick }) {
         }}
         onPointerOut={() => setHovered(false)}
       >
-        <meshStandardMaterial color={color} emissive={color} roughness={0.6} />
-      </mesh>
+        <mesh ref={meshRef} geometry={geometry} raycast={ignoreRaycast}>
+          {/* Hors brouillard : les étoiles lointaines restent lumineuses. */}
+          <meshStandardMaterial color={color} emissive={color} roughness={0.6} fog={false} />
+        </mesh>
+        {/* Zone de clic invisible, sphérique : même taille quel que soit
+            l'angle de rotation de l'étoile. */}
+        <mesh>
+          <sphereGeometry args={[HIT_RADIUS, 12, 8]} />
+          <meshBasicMaterial visible={false} />
+        </mesh>
+      </group>
     </group>
   );
 }

@@ -17,7 +17,7 @@
 //               sont lus
 //   - onReady : callback appelé une fois la texture du recto chargée
 
-import { useEffect, useMemo, useRef } from "react";
+import { Component, useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { PresentationControls, useTexture } from "@react-three/drei";
 import {
@@ -284,18 +284,43 @@ function PlaceholderCard({ name, ...props }) {
   return <CardMesh front={texture} {...props} />;
 }
 
+// Si l'image ne se charge pas (réseau, ou en-têtes CORS invalides renvoyés
+// par TCGdex pour certaines cartes), useTexture lève une erreur : sans ce
+// garde-fou elle démonterait toute l'application (écran noir). On affiche
+// alors le recto de remplacement.
+class ImageErrorBoundary extends Component {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  componentDidCatch(error) {
+    console.warn("Image de carte indisponible :", error);
+  }
+
+  render() {
+    return this.state.failed ? this.props.fallback : this.props.children;
+  }
+}
+
 export default function Card3D({ card, onReady }) {
   const holoStrength = getHoloStrength(card.rarity);
+  const placeholder = (
+    <PlaceholderCard name={card.name} holoStrength={holoStrength} onReady={onReady} />
+  );
+
+  if (!card.image) return placeholder;
 
   // TCGdex fournit une URL de base sans extension : la qualité et le format
   // s'ajoutent en suffixe.
-  return card.image ? (
-    <ImageCard
-      url={`${card.image}/high.webp`}
-      holoStrength={holoStrength}
-      onReady={onReady}
-    />
-  ) : (
-    <PlaceholderCard name={card.name} holoStrength={holoStrength} onReady={onReady} />
+  return (
+    <ImageErrorBoundary fallback={placeholder}>
+      <ImageCard
+        url={`${card.image}/high.webp`}
+        holoStrength={holoStrength}
+        onReady={onReady}
+      />
+    </ImageErrorBoundary>
   );
 }

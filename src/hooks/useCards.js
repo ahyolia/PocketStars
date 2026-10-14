@@ -12,6 +12,8 @@
 //     pool déjà en mémoire, sans nouvel appel réseau.
 //   - `selectCard(id)` récupère le détail complet d'une carte (types, image,
 //     rareté…) avec un loading/error dédiés, indépendants de ceux de la pool.
+//     La promesse renvoyée indique l'issue : true (carte chargée), false
+//     (erreur), ou undefined si la requête a été dépassée par une autre.
 //   - `clearSelectedCard()` referme la carte sélectionnée.
 //
 // Retourne : { cards, loading, error, shuffle, selectedCard,
@@ -82,9 +84,13 @@ export function useCards() {
     try {
       const { data } = await fetchCardById(id);
       if (!data) throw new Error(`Carte introuvable : ${id}`);
-      if (isLatest()) setSelectedCard(data);
+      if (!isLatest()) return undefined;
+      setSelectedCard(data);
+      return true;
     } catch (err) {
-      if (isLatest()) setSelectedCardError(err);
+      if (!isLatest()) return undefined;
+      setSelectedCardError(err);
+      return false;
     } finally {
       if (isLatest()) setSelectedCardLoading(false);
     }

@@ -12,7 +12,8 @@
 //   - card    : détail complet de la carte (TCGdex /cards/:id) ou null
 //   - loading : true pendant le fetch du détail
 //   - error   : erreur éventuelle du fetch du détail
-//   - onClose : callback appelé pour refermer l'overlay
+//   - onClose    : callback appelé pour refermer l'overlay
+//   - onRevealed : callback(card) appelé une fois la carte retournée
 
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
@@ -22,6 +23,10 @@ import "./CardReveal.css";
 // Au-delà de ce déplacement (px) entre l'appui et le relâchement, le geste
 // est un glisser et non un clic.
 const CLICK_TOLERANCE = 6;
+
+// Délai entre l'affichage de la carte et onRevealed : le temps qu'elle se
+// retourne, comme l'apparition des informations (cf. CardReveal.css).
+const REVEALED_DELAY_MS = 900;
 
 function Spinner({ label }) {
   return (
@@ -34,9 +39,15 @@ function Spinner({ label }) {
 
 // Scène de la carte : remontée pour chaque carte (key) afin de réinitialiser
 // l'état de chargement de la texture et l'animation de révélation.
-function CardStage({ card, onClose }) {
+function CardStage({ card, onClose, onRevealed }) {
   const [ready, setReady] = useState(false);
   const handleReady = useCallback(() => setReady(true), []);
+
+  useEffect(() => {
+    if (!ready) return;
+    const timer = setTimeout(() => onRevealed?.(card), REVEALED_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [ready, card, onRevealed]);
   const pointerDownRef = useRef(null);
 
   const handlePointerMissed = (e) => {
@@ -70,22 +81,24 @@ function CardStage({ card, onClose }) {
 
       <div className={`card-reveal__info${ready ? " is-visible" : ""}`}>
         <h2 className="card-reveal__name">{card.name}</h2>
+        {/* Rareté et types en pastilles, colorées selon le type TCGdex. */}
         <p className="card-reveal__details">
-          <span>{card.rarity ?? "Rareté inconnue"}</span>
-          {card.types?.length > 0 && (
-            <>
-              <span aria-hidden="true"> · </span>
-              <span>{card.types.join(", ")}</span>
-            </>
+          {/* TCGdex indique "None" pour les cartes sans rareté (Énergies…). */}
+          {card.rarity && card.rarity !== "None" && (
+            <span className="card-reveal__chip">{card.rarity}</span>
           )}
+          {card.types?.map((type) => (
+            <span key={type} className="card-reveal__chip" data-type={type}>
+              {type}
+            </span>
+          ))}
         </p>
-        <p className="card-reveal__hint">Fais glisser la carte pour la tourner</p>
       </div>
     </>
   );
 }
 
-export default function CardReveal({ card, loading, error, onClose }) {
+export default function CardReveal({ card, loading, error, onClose, onRevealed }) {
   const isOpen = Boolean(card || loading || error);
 
   // Fermeture au clavier (Échap).
@@ -111,7 +124,9 @@ export default function CardReveal({ card, loading, error, onClose }) {
         </div>
       )}
 
-      {!loading && card && <CardStage key={card.id} card={card} onClose={onClose} />}
+      {!loading && card && (
+        <CardStage key={card.id} card={card} onClose={onClose} onRevealed={onRevealed} />
+      )}
 
       <button
         type="button"

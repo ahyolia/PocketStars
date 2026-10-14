@@ -1,0 +1,150 @@
+/* Compagnon en bas à droite, au-dessus de la révélation de carte (z-index
+   10) pour pouvoir y réagir. Le conteneur laisse passer les clics : seuls le
+   compagnon et sa bulle les captent. */
+.poke-companion {
+  position: fixed;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: max(16px, env(safe-area-inset-bottom));
+  z-index: 11;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  max-width: min(340px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+/* Bulle de BD : trait épais, ombre pleine, pointe vers le compagnon. */
+.poke-companion__bubble {
+  position: relative;
+  margin: 0 50px 8px 0;
+  padding: 14px 16px 12px;
+  border: var(--cartoon-border);
+  border-radius: 20px;
+  background: var(--cartoon-paper);
+  box-shadow: var(--cartoon-shadow);
+  color: var(--cartoon-text);
+  font-family: var(--cartoon-font);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.35;
+  text-align: left;
+  cursor: pointer;
+  pointer-events: auto;
+  animation: poke-companion-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Pointe : un carré tourné, cerné sur ses deux côtés extérieurs, qui
+   recouvre le trait de la bulle à sa base. */
+.poke-companion__bubble::after {
+  content: "";
+  position: absolute;
+  right: 30px;
+  bottom: -10px;
+  width: 16px;
+  height: 16px;
+  border-right: var(--cartoon-border);
+  border-bottom: var(--cartoon-border);
+  background: var(--cartoon-paper);
+  transform: rotate(45deg);
+}
+
+/* Nom en étiquette, à cheval sur le bord supérieur de la bulle. */
+.poke-companion__name {
+  position: absolute;
+  top: -14px;
+  left: 14px;
+  padding: 1px 10px;
+  border: 2px solid var(--cartoon-ink);
+  border-radius: 999px;
+  background: var(--cartoon-sun);
+  color: var(--cartoon-ink);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.poke-companion__avatar {
+  width: 190px;
+  height: 190px;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  pointer-events: auto;
+  animation: poke-companion-float 3.2s ease-in-out infinite;
+}
+
+.poke-companion__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 0 rgba(29, 19, 56, 0.55));
+}
+
+.poke-companion__avatar:focus-visible {
+  outline: 2px solid #f5d94a;
+  outline-offset: 2px;
+  border-radius: 50%;
+}
+
+.poke-companion__fallback {
+  font-size: 120px;
+  color: #f5d94a;
+  text-shadow: 0 0 14px rgba(245, 217, 74, 0.6);
+}
+
+@keyframes poke-companion-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes poke-companion-pop {
+  from { opacity: 0; transform: translateY(10px) scale(0.85); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Petits écrans : compagnon plus discret. */
+@media (max-width: 600px) {
+  .poke-companion__avatar {
+    width: 120px;
+    height: 120px;
+  }
+
+  /* Bulle remontée au-dessus du joystick (en bas à gauche), qu'elle
+     masquerait sinon en pleine largeur. */
+  .poke-companion__bubble {
+    margin-right: 20px;
+    margin-bottom: 30px;
+    font-size: 15px;
+  }
+
+  .poke-companion__bubble::after {
+    right: 22px;
+  }
+}
+
+/* Écrans bas (téléphone en paysage) : compagnon compact. */
+@media (max-height: 500px) {
+  .poke-companion__avatar {
+    width: 96px;
+    height: 96px;
+  }
+
+  .poke-companion__bubble {
+    margin-right: 20px;
+    font-size: 14px;
+  }
+
+  .poke-companion__bubble::after {
+    right: 22px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .poke-companion__avatar,
+  .poke-companion__bubble {
+    animation: none;
+  }
+}

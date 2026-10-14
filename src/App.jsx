@@ -1,9 +1,17 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import IslandScene from './components/IslandScene'
 import CardReveal from './components/CardReveal'
+import PokeCompanion from './components/PokeCompanion'
 import SearchBar from './components/SearchBar'
 import { useCards } from './hooks/useCards'
 import { MAX_RESULTS, useCardSearch } from './hooks/useCardSearch'
+import { useCompanion } from './hooks/useCompanion'
+import {
+  ERROR_LINES,
+  STAR_CLICK_LINES,
+  getRevealLine,
+  pickRandom,
+} from './constants/companionLines'
 
 function App() {
   const {
@@ -18,6 +26,24 @@ function App() {
 
   const [search, setSearch] = useState('')
   const searchResults = useCardSearch(search)
+  const companion = useCompanion()
+  const { say, silence } = companion
+
+  // Réactions du compagnon : au clic sur une étoile, puis à la révélation
+  // de la carte (ou à l'échec de son chargement).
+  const handleStarClick = useCallback(
+    async (id) => {
+      say(pickRandom(STAR_CLICK_LINES))
+      const loaded = await selectCard(id)
+      if (loaded === false) say(pickRandom(ERROR_LINES))
+    },
+    [say, selectCard]
+  )
+  const handleRevealed = useCallback((card) => say(getRevealLine(card)), [say])
+  const handleCloseReveal = useCallback(() => {
+    silence()
+    clearSelectedCard()
+  }, [silence, clearSelectedCard])
 
   // Recherche en cours : le ciel affiche les résultats trouvés dans toute la
   // base ; sinon, le tirage aléatoire.
@@ -44,13 +70,14 @@ function App() {
     <>
       <IslandScene
         cards={skyCards}
-        onStarClick={selectCard}
+        onStarClick={handleStarClick}
         controlsEnabled={!isRevealOpen}
       />
       <SearchBar
         value={search}
         onFilter={setSearch}
         status={searchStatus}
+        hidden={isRevealOpen}
       >
         <button type="button" onClick={handleShuffle}>
           Shuffle
@@ -60,7 +87,13 @@ function App() {
         card={selectedCard}
         loading={selectedCardLoading}
         error={selectedCardError}
-        onClose={clearSelectedCard}
+        onClose={handleCloseReveal}
+        onRevealed={handleRevealed}
+      />
+      <PokeCompanion
+        message={companion.message}
+        messageKey={companion.messageKey}
+        onNext={companion.next}
       />
     </>
   )

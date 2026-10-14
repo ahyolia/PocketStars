@@ -109,3 +109,21 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+
+/* Style "cartoon" de l'interface : panneaux crème cernés d'un trait épais,
+   ombre portée pleine (sans flou), police ronde. Les boutons, posés sur les
+   panneaux clairs, gardent une ombre sombre. */
+:root {
+  --cartoon-font: 'Fredoka', system-ui, 'Segoe UI', Roboto, sans-serif;
+  --cartoon-ink: #1d1338;
+  --cartoon-paper: #fff7e6;
+  --cartoon-text: #3a2a5c;
+  --cartoon-muted: #8a7aa8;
+  --cartoon-sun: #ffd23f;
+  --cartoon-sun-light: #ffe27a;
+  --cartoon-border: 3px solid var(--cartoon-ink);
+  /* Ombre violette : un trait sombre se perdrait dans le ciel de nuit. */
+  --cartoon-shadow-color: #8c6bff;
+  --cartoon-shadow: 0 6px 0 var(--cartoon-shadow-color);
+  --cartoon-shadow-small: 0 3px 0 var(--cartoon-ink);
+}

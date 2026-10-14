@@ -7,7 +7,7 @@
   justify-content: center;
   /* Voile léger : laisse voir le ciel étoilé derrière la carte. */
   background: rgba(8, 6, 24, 0.3);
-  color: #d8d6f0;
+  color: var(--cartoon-text);
   text-align: center;
   animation: card-reveal-fade 0.35s ease-out;
 }
@@ -22,37 +22,68 @@
   position: absolute;
   top: 16px;
   right: 16px;
-  width: 40px;
-  height: 40px;
-  border: 1px solid #3a3570;
+  width: 46px;
+  height: 46px;
+  border: var(--cartoon-border);
   border-radius: 50%;
-  background: rgba(22, 20, 46, 0.85);
-  color: inherit;
-  font-size: 26px;
+  background: var(--cartoon-sun);
+  box-shadow: 0 4px 0 var(--cartoon-shadow-color);
+  color: var(--cartoon-ink);
+  font-family: var(--cartoon-font);
+  font-size: 28px;
+  font-weight: 700;
   line-height: 1;
   cursor: pointer;
+  transform: translateY(-2px);
+  transition:
+    transform 0.08s ease-out,
+    box-shadow 0.08s ease-out,
+    background 0.15s;
 }
 
 .card-reveal__close:hover {
-  background: #2a2650;
+  background: var(--cartoon-sun-light);
+}
+
+.card-reveal__close:active {
+  box-shadow: 0 0 0 var(--cartoon-ink);
+  transform: translateY(1px);
 }
 
 .card-reveal__close:focus-visible {
-  outline: 2px solid #f5d94a;
+  outline: 3px solid #a77bff;
   outline-offset: 2px;
 }
 
-/* Informations sous la carte : n'interceptent pas les gestes sur le canvas. */
+/* Informations sous la carte : petite étiquette sur une ligne (nom puis
+   pastilles), discrète pour laisser la vedette à la carte ; n'interceptent
+   pas les gestes sur le canvas. Elle apparaît avec un léger rebond une fois
+   la carte retournée. */
 .card-reveal__info {
   position: absolute;
-  left: 16px;
-  right: 16px;
-  bottom: 6vh;
+  left: 0;
+  right: 0;
+  bottom: 7vh;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px 10px;
+  width: fit-content;
+  max-width: calc(100% - 32px);
+  box-sizing: border-box;
+  margin: 0 auto;
+  padding: 5px 8px 5px 16px;
+  border: 2px solid var(--cartoon-ink);
+  border-radius: 999px;
+  background: var(--cartoon-paper);
+  box-shadow: 0 3px 0 var(--cartoon-shadow-color);
+  font-family: var(--cartoon-font);
   opacity: 0;
-  transform: translateY(12px);
+  transform: translateY(12px) scale(0.9);
   transition:
-    opacity 0.5s ease-out 0.9s,
-    transform 0.5s ease-out 0.9s;
+    opacity 0.3s ease-out 0.9s,
+    transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 0.9s;
   pointer-events: none;
 }
 
@@ -62,30 +93,55 @@
 }
 
 .card-reveal__name {
-  margin: 0 0 4px;
-  font-size: 28px;
-  color: #f5d94a;
-  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+  margin: 0;
+  font-family: var(--cartoon-font);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--cartoon-ink);
 }
 
 .card-reveal__details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
   margin: 0;
-  font-size: 17px;
-  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6);
 }
 
-.card-reveal__hint {
-  margin: 8px 0 0;
-  font-size: 13px;
-  opacity: 0.6;
+/* Pastille : rareté (violet par défaut) ou type (couleur du type). */
+.card-reveal__chip {
+  padding: 1px 9px;
+  border: 2px solid var(--cartoon-ink);
+  border-radius: 999px;
+  background: #ece4ff;
+  color: var(--cartoon-ink);
+  font-size: 12px;
+  font-weight: 600;
 }
+
+.card-reveal__chip[data-type="Fire"] { background: #ff9a6b; }
+.card-reveal__chip[data-type="Water"] { background: #7cc4ff; }
+.card-reveal__chip[data-type="Grass"] { background: #8ee08a; }
+.card-reveal__chip[data-type="Lightning"] { background: var(--cartoon-sun); }
+.card-reveal__chip[data-type="Psychic"] { background: #e39cf0; }
+.card-reveal__chip[data-type="Fighting"] { background: #e8a46e; }
+.card-reveal__chip[data-type="Darkness"] { background: #6e6a8a; color: #fff; }
+.card-reveal__chip[data-type="Metal"] { background: #c4ccd8; }
+.card-reveal__chip[data-type="Dragon"] { background: #d4b85c; }
+.card-reveal__chip[data-type="Fairy"] { background: #ffb3d9; }
+.card-reveal__chip[data-type="Colorless"] { background: #fff; }
 
 .card-reveal__status {
   position: relative;
-  padding: 24px 32px;
-  border: 1px solid #3a3570;
-  border-radius: 16px;
-  background: rgba(22, 20, 46, 0.85);
+  padding: 22px 30px;
+  border: var(--cartoon-border);
+  border-radius: 22px;
+  background: var(--cartoon-paper);
+  box-shadow: var(--cartoon-shadow);
+  color: var(--cartoon-text);
+  font-family: var(--cartoon-font);
+  font-size: 17px;
+  font-weight: 500;
   pointer-events: none;
 }
 
@@ -96,17 +152,30 @@
 .card-reveal__status .card-reveal__error {
   margin-top: 8px;
   font-size: 14px;
-  opacity: 0.7;
+  color: var(--cartoon-muted);
 }
 
 .card-reveal__spinner {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   margin: 0 auto 12px;
-  border: 3px solid rgba(245, 217, 74, 0.25);
-  border-top-color: #f5d94a;
+  border: 4px solid #ece4ff;
+  border-top-color: var(--cartoon-ink);
   border-radius: 50%;
   animation: card-reveal-spin 0.8s linear infinite;
+}
+
+/* Petits écrans : étiquette à gauche, à côté du compagnon (en bas à
+   droite). */
+@media (max-width: 600px) {
+  .card-reveal__info {
+    left: 16px;
+    right: auto;
+    max-width: calc(100% - 152px);
+    margin: 0;
+    justify-content: flex-start;
+    border-radius: 18px;
+  }
 }
 
 @keyframes card-reveal-fade {

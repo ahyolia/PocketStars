@@ -1,15 +1,25 @@
 /* Bande pleine largeur transparente aux clics : seul le panneau les capte,
-   pour ne pas bloquer la caméra ni les étoiles autour. */
+   pour ne pas bloquer la caméra ni les étoiles autour. Le panneau est calé
+   en haut à gauche, pour laisser le centre de l'écran à la scène. */
 .search-bar {
   position: fixed;
-  top: 16px;
-  left: 0;
-  right: 0;
+  top: max(16px, env(safe-area-inset-top));
+  left: env(safe-area-inset-left);
+  right: env(safe-area-inset-right);
   z-index: 5;
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   padding: 0 16px;
   pointer-events: none;
+  font-family: var(--cartoon-font);
+  transition:
+    opacity 0.25s ease-out,
+    transform 0.25s ease-out;
+}
+
+.search-bar.is-hidden {
+  opacity: 0;
+  transform: translateY(-12px);
 }
 
 .search-bar__panel {
@@ -17,57 +27,96 @@
   align-items: center;
   gap: 8px;
   width: 100%;
-  max-width: 480px;
+  max-width: 420px;
   box-sizing: border-box;
-  padding: 6px;
-  border: 1px solid #3a3570;
+  padding: 6px 6px 6px 8px;
+  border: var(--cartoon-border);
   border-radius: 999px;
-  background: rgba(22, 20, 46, 0.85);
-  backdrop-filter: blur(6px);
+  background: var(--cartoon-paper);
+  box-shadow: var(--cartoon-shadow);
   pointer-events: auto;
+}
+
+/* Petite loupe dessinée en CSS, devant le champ. */
+.search-bar__panel::before {
+  content: "";
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  margin-left: 8px;
+  border: 3px solid var(--cartoon-ink);
+  border-radius: 50%;
+  box-shadow: 5px 5px 0 -3px var(--cartoon-ink);
 }
 
 .search-bar__input {
   flex: 1;
   min-width: 0;
-  padding: 8px 12px;
+  padding: 8px 6px;
   border: none;
   background: transparent;
-  color: #d8d6f0;
+  color: var(--cartoon-text);
   font: inherit;
-  font-size: 16px;
+  font-size: 17px;
+  font-weight: 500;
   outline: none;
 }
 
 .search-bar__input::placeholder {
-  color: rgba(216, 214, 240, 0.5);
+  color: var(--cartoon-muted);
+}
+
+/* Croix native du champ de recherche, assortie au trait. */
+.search-bar__input::-webkit-search-cancel-button {
+  filter: grayscale(1) brightness(0.3);
 }
 
 .search-bar__count {
   flex-shrink: 0;
-  font-size: 14px;
-  color: rgba(216, 214, 240, 0.7);
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #ece4ff;
+  color: var(--cartoon-text);
+  font-size: 13px;
+  font-weight: 600;
 }
 
+/* Bouton "bonbon" : s'enfonce au clic (l'ombre disparaît). */
 .search-bar__panel button {
   flex-shrink: 0;
-  padding: 8px 16px;
-  border: none;
+  padding: 7px 18px;
+  border: var(--cartoon-border);
   border-radius: 999px;
-  background: #f5d94a;
-  color: #16142e;
+  background: var(--cartoon-sun);
+  box-shadow: var(--cartoon-shadow-small);
+  color: var(--cartoon-ink);
   font: inherit;
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 700;
   cursor: pointer;
+  transform: translateY(-2px);
+  transition:
+    transform 0.08s ease-out,
+    box-shadow 0.08s ease-out,
+    background 0.15s;
 }
 
 .search-bar__panel button:hover {
-  background: #fff3b0;
+  background: var(--cartoon-sun-light);
+}
+
+.search-bar__panel button:active {
+  box-shadow: 0 0 0 var(--cartoon-ink);
+  transform: translateY(1px);
 }
 
 .search-bar__panel button:focus-visible,
-.search-bar__input:focus-visible {
-  outline: 2px solid #f5d94a;
+.search-bar__panel:focus-within {
+  outline: 3px solid #a77bff;
   outline-offset: 2px;
+}
+
+/* Le focus du champ est signalé sur tout le panneau (ci-dessus). */
+.search-bar__input:focus-visible {
+  outline: none;
 }

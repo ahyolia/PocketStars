@@ -13,13 +13,15 @@
 //   - onFilter : callback(texte) appelé à chaque frappe
 //   - status   : texte d'état affiché à droite du champ (nombre de
 //                résultats, chargement…), ou rien
+//   - hidden   : true pour masquer la barre (ex. pendant la révélation d'une
+//                carte, où elle serait inutilisable sous le voile)
 //   - children : actions affichées à droite du champ (ex. bouton Shuffle)
 
 import "./SearchBar.css";
 
-export default function SearchBar({ value, onFilter, status, children }) {
+export default function SearchBar({ value, onFilter, status, hidden = false, children }) {
   return (
-    <div className="search-bar">
+    <div className={`search-bar${hidden ? " is-hidden" : ""}`} inert={hidden}>
       <div className="search-bar__panel">
         <input
           type="search"

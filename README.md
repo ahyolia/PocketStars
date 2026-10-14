@@ -6,6 +6,8 @@ every star hides a card. Clicking a star brings it down and reveals the card
 in 3D, with commentary from Mimikyu, the companion. Card data comes from the
 public [TCGdex](https://tcgdex.dev) API.
 
+**Live demo: <https://pocketstarss.netlify.app>**
+
 The interface and the companion's lines are in French.
 
 ## Features

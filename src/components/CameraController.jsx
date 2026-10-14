@@ -28,6 +28,7 @@ import { useEffect, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { MathUtils } from "three";
 import { EDGE_MARGIN, EYE_HEIGHT, ISLAND_RADIUS } from "../constants/world";
+import { soundtrack } from "../audio/soundtrack";
 
 const WALK_SPEED = 6; // unités par seconde
 const RUN_MULTIPLIER = 2;
@@ -235,9 +236,14 @@ export default function CameraController({ enabled = true, onFirstMove, touchMov
       camera.position.z *= maxRadius / radius;
     }
 
-    // Léger balancement de la tête en marchant.
+    // Léger balancement de la tête en marchant, et un bruit de pas à chaque
+    // demi-période (quand la tête est au plus bas).
     const groundSpeed = Math.hypot(velocity.x, velocity.z);
+    const previousStep = Math.floor(velocity.bobPhase / Math.PI);
     velocity.bobPhase += delta * BOB_FREQUENCY * (groundSpeed / WALK_SPEED);
+    if (groundSpeed > 1 && Math.floor(velocity.bobPhase / Math.PI) !== previousStep) {
+      soundtrack.play("footstep", { run: groundSpeed > WALK_SPEED * 1.2 });
+    }
     const bob = Math.sin(velocity.bobPhase) * BOB_AMPLITUDE * Math.min(groundSpeed / WALK_SPEED, 1);
     camera.position.y = EYE_HEIGHT + bob;
 

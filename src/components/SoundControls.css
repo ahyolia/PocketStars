@@ -1,0 +1,106 @@
+/* Lecteur en haut à droite, en pilule cartoon. */
+.sound-controls {
+  position: fixed;
+  top: max(16px, env(safe-area-inset-top));
+  right: max(16px, env(safe-area-inset-right));
+  /* Sous la barre de recherche (z-index 6) quand elle est déployée sur
+     mobile. */
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 5px 5px 14px;
+  border: var(--cartoon-border);
+  border-radius: 999px;
+  background: var(--cartoon-paper);
+  box-shadow: var(--cartoon-shadow);
+  font-family: var(--cartoon-font);
+  transition:
+    opacity 0.25s ease-out,
+    transform 0.25s ease-out;
+}
+
+.sound-controls.is-hidden {
+  opacity: 0;
+  transform: translateY(-12px);
+}
+
+.sound-controls__title {
+  max-width: 180px;
+  overflow: hidden;
+  color: var(--cartoon-text);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.sound-controls__button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: var(--cartoon-border);
+  border-radius: 50%;
+  background: var(--cartoon-sun);
+  box-shadow: var(--cartoon-shadow-small);
+  color: var(--cartoon-ink);
+  cursor: pointer;
+  transform: translateY(-2px);
+  transition:
+    transform 0.08s ease-out,
+    box-shadow 0.08s ease-out,
+    background 0.15s;
+}
+
+.sound-controls__button svg {
+  width: 20px;
+  height: 20px;
+}
+
+.sound-controls__button:hover:not(:disabled) {
+  background: var(--cartoon-sun-light);
+}
+
+.sound-controls__button:active:not(:disabled) {
+  box-shadow: 0 0 0 var(--cartoon-ink);
+  transform: translateY(1px);
+}
+
+.sound-controls__button:disabled {
+  background: #ece4ff;
+  cursor: default;
+  opacity: 0.6;
+}
+
+.sound-controls__button:focus-visible {
+  outline: 3px solid #a77bff;
+  outline-offset: 2px;
+}
+
+/* Écrans moyens : sans le titre, pour ne pas toucher la barre de
+   recherche (en haut à gauche). */
+@media (max-width: 800px) {
+  .sound-controls {
+    padding-left: 5px;
+  }
+
+  .sound-controls__title {
+    display: none;
+  }
+}
+
+/* Petits écrans : lecteur réduit à ses boutons (la recherche est repliée
+   en boutons sur le côté gauche). */
+@media (max-width: 600px) {
+  .sound-controls {
+    padding: 4px;
+  }
+
+  .sound-controls__button {
+    width: 34px;
+    height: 34px;
+  }
+}

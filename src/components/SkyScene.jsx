@@ -29,6 +29,7 @@ import { Stars, useGLTF } from "@react-three/drei";
 import { MathUtils, Matrix4, Vector3 } from "three";
 import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
 import ShootingStars from "./ShootingStars";
+import { soundtrack } from "../audio/soundtrack";
 
 // Modèle 3D : "Star" by J-Toastie [CC-BY 3.0] via Poly Pizza
 // https://poly.pizza/m/CeJcPl217O
@@ -158,6 +159,7 @@ function Star({ id, position, motion, geometry, onStarClick }) {
         onPointerOver={(e) => {
           e.stopPropagation();
           setHovered(true);
+          if (e.pointerType === "mouse") soundtrack.play("starHover");
         }}
         onPointerOut={() => setHovered(false)}
       >

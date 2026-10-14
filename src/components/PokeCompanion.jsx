@@ -14,7 +14,8 @@
 //                  bulle à chaque nouvelle réplique)
 //   - onNext     : callback appelé au clic (réplique suivante)
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { soundtrack } from "../audio/soundtrack";
 import { COMPANION_NAME } from "../constants/companionLines";
 import "./PokeCompanion.css";
 
@@ -25,6 +26,12 @@ const SPRITE_URL =
 export default function PokeCompanion({ message, messageKey, onNext }) {
   // Sprite indisponible (hors ligne…) : une étoile le remplace.
   const [spriteFailed, setSpriteFailed] = useState(false);
+
+  // Voix : quelques "blips" à chaque nouvelle réplique (messageKey change à
+  // chaque réplique, même si le texte se répète).
+  useEffect(() => {
+    if (message) soundtrack.play("companion", { length: message.length });
+  }, [message, messageKey]);
 
   return (
     <div className="poke-companion">

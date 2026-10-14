@@ -18,6 +18,7 @@
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import Card3D from "./Card3D";
+import { soundtrack } from "../audio/soundtrack";
 import "./CardReveal.css";
 
 // Au-delà de ce déplacement (px) entre l'appui et le relâchement, le geste
@@ -43,8 +44,10 @@ function CardStage({ card, onClose, onRevealed }) {
   const [ready, setReady] = useState(false);
   const handleReady = useCallback(() => setReady(true), []);
 
+  // La carte arrive en tournoyant (souffle), puis se retourne (onRevealed).
   useEffect(() => {
     if (!ready) return;
+    soundtrack.play("revealWhoosh");
     const timer = setTimeout(() => onRevealed?.(card), REVEALED_DELAY_MS);
     return () => clearTimeout(timer);
   }, [ready, card, onRevealed]);

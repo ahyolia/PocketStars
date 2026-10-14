@@ -101,79 +101,188 @@ function drawStar(ctx, cx, cy, outer, inner) {
   ctx.closePath();
 }
 
+// Palette "cartoon" de l'interface (cf. index.css).
+const INK = "#1d1338";
+const PAPER = "#fff7e6";
+const SUN = "#ffd23f";
+const VIOLET = "#8c6bff";
+const NIGHT = "#3b2a8c";
+const CARTOON_FONT = "Fredoka, system-ui, sans-serif";
+
+// Texture dessinée dans un canvas 2D. Le texte utilise la police Fredoka,
+// chargée par la page : si elle n'est pas encore prête au premier dessin,
+// la texture est redessinée dès qu'elle l'est.
 function createCanvasTexture(draw) {
   const canvas = document.createElement("canvas");
   canvas.width = 630;
   canvas.height = 880;
-  draw(canvas.getContext("2d"), canvas.width, canvas.height);
+  const ctx = canvas.getContext("2d");
+  draw(ctx, canvas.width, canvas.height);
   const texture = new CanvasTexture(canvas);
   texture.colorSpace = SRGBColorSpace;
   texture.anisotropy = 8;
+
+  if (document.fonts && !document.fonts.check(`700 40px ${CARTOON_FONT}`)) {
+    document.fonts.load(`700 40px ${CARTOON_FONT}`).then(() => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      draw(ctx, canvas.width, canvas.height);
+      texture.needsUpdate = true;
+    });
+  }
   return texture;
 }
 
-// Dos de carte "Pocket Stars" : ciel nocturne, étoile dorée centrale.
-function createBackTexture() {
-  return createCanvasTexture((ctx, w, h) => {
-    const sky = ctx.createRadialGradient(w / 2, h / 2, 40, w / 2, h / 2, h * 0.7);
-    sky.addColorStop(0, "#3a2f80");
-    sky.addColorStop(1, "#0b0a1f");
-    ctx.fillStyle = sky;
-    ctx.fillRect(0, 0, w, h);
+// Générateur pseudo-aléatoire à graine fixe : décor identique d'une carte à
+// l'autre.
+function seededRandom(seed) {
+  return () => {
+    seed = (seed * 16807) % 2147483647;
+    return seed / 2147483647;
+  };
+}
 
-    // Petites étoiles à positions pseudo-aléatoires mais fixes.
-    let seed = 7;
-    const random = () => {
-      seed = (seed * 16807) % 2147483647;
-      return seed / 2147483647;
-    };
-    ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
-    for (let i = 0; i < 90; i++) {
+// Petite étincelle à quatre branches.
+function drawSparkle(ctx, cx, cy, size) {
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - size);
+  ctx.quadraticCurveTo(cx, cy, cx + size, cy);
+  ctx.quadraticCurveTo(cx, cy, cx, cy + size);
+  ctx.quadraticCurveTo(cx, cy, cx - size, cy);
+  ctx.quadraticCurveTo(cx, cy, cx, cy - size);
+  ctx.closePath();
+}
+
+// Fond de carte cartoon : aplat de nuit semé d'étincelles et de pois,
+// cadre crème cerné d'un trait épais.
+function drawCartoonFrame(ctx, w, h) {
+  ctx.fillStyle = INK;
+  ctx.fillRect(0, 0, w, h);
+
+  // Cadre crème, puis panneau intérieur.
+  ctx.fillStyle = PAPER;
+  ctx.beginPath();
+  ctx.roundRect(14, 14, w - 28, h - 28, 34);
+  ctx.fill();
+
+  ctx.fillStyle = NIGHT;
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = 10;
+  ctx.beginPath();
+  ctx.roundRect(44, 44, w - 88, h - 88, 24);
+  ctx.fill();
+  // Le décor est découpé à la forme du panneau.
+
+  ctx.save();
+  ctx.clip();
+  const random = seededRandom(7);
+  for (let i = 0; i < 26; i++) {
+    const x = 50 + random() * (w - 100);
+    const y = 50 + random() * (h - 100);
+    if (i % 3 === 0) {
+      ctx.fillStyle = "rgba(255, 247, 230, 0.18)";
       ctx.beginPath();
-      ctx.arc(random() * w, random() * h, random() * 2 + 0.5, 0, Math.PI * 2);
+      ctx.arc(x, y, 6 + random() * 8, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.fillStyle = i % 2 ? SUN : PAPER;
+      drawSparkle(ctx, x, y, 8 + random() * 10);
       ctx.fill();
     }
+  }
+  ctx.restore();
 
-    // Cadre doré.
-    ctx.strokeStyle = "#f5d94a";
-    ctx.lineWidth = 10;
-    ctx.beginPath();
-    ctx.roundRect(28, 28, w - 56, h - 56, 26);
+  // Trait du panneau, par-dessus le décor.
+  ctx.beginPath();
+  ctx.roundRect(44, 44, w - 88, h - 88, 24);
+  ctx.stroke();
+}
+
+// Texte cartoon : lettres crème cernées d'encre, ombre violette décalée.
+function drawCartoonText(ctx, text, x, y, size, maxWidth) {
+  ctx.font = `700 ${size}px ${CARTOON_FONT}`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.lineJoin = "round";
+  ctx.lineWidth = size * 0.22;
+  ctx.strokeStyle = VIOLET;
+  ctx.strokeText(text, x, y + size * 0.12, maxWidth);
+  ctx.strokeStyle = INK;
+  ctx.strokeText(text, x, y, maxWidth);
+  ctx.fillStyle = PAPER;
+  ctx.fillText(text, x, y, maxWidth);
+}
+
+// Dos de carte "Pocket Stars" : grosse étoile souriante sur ciel de nuit.
+function createBackTexture() {
+  return createCanvasTexture((ctx, w, h) => {
+    drawCartoonFrame(ctx, w, h);
+
+    const cx = w / 2;
+    const cy = h / 2 - 40;
+    ctx.lineJoin = "round";
+
+    // Ombre portée violette, puis étoile jaune cernée.
+    drawStar(ctx, cx, cy + 16, 175, 80);
+    ctx.fillStyle = VIOLET;
+    ctx.fill();
+    drawStar(ctx, cx, cy, 175, 80);
+    ctx.fillStyle = SUN;
+    ctx.fill();
+    ctx.lineWidth = 12;
+    ctx.strokeStyle = INK;
     ctx.stroke();
 
-    // Étoile centrale avec halo.
-    ctx.shadowColor = "#f5d94a";
-    ctx.shadowBlur = 60;
-    ctx.fillStyle = "#f5d94a";
-    drawStar(ctx, w / 2, h / 2 - 20, 150, 62);
+    // Reflet.
+    ctx.fillStyle = "rgba(255, 255, 255, 0.55)";
+    ctx.beginPath();
+    ctx.ellipse(cx - 52, cy - 52, 14, 24, -0.6, 0, Math.PI * 2);
     ctx.fill();
-    ctx.shadowBlur = 0;
 
-    ctx.fillStyle = "#f5d94a";
-    ctx.font = "bold 46px system-ui, sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("POCKET STARS", w / 2, h - 110);
+    // Visage : yeux, joues, sourire.
+    ctx.fillStyle = INK;
+    for (const dx of [-30, 30]) {
+      ctx.beginPath();
+      ctx.ellipse(cx + dx, cy + 4, 9, 15, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.fillStyle = "rgba(255, 120, 150, 0.6)";
+    for (const dx of [-58, 58]) {
+      ctx.beginPath();
+      ctx.ellipse(cx + dx, cy + 30, 14, 8, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 7;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.arc(cx, cy + 26, 16, 0.15 * Math.PI, 0.85 * Math.PI);
+    ctx.stroke();
+
+    drawCartoonText(ctx, "POCKET STARS", cx, h - 150, 64, w - 140);
   });
 }
 
 // Recto de remplacement pour les cartes sans image TCGdex.
 function createPlaceholderTexture(name) {
   return createCanvasTexture((ctx, w, h) => {
-    ctx.fillStyle = "#16142e";
-    ctx.fillRect(0, 0, w, h);
-    ctx.strokeStyle = "#3a3570";
-    ctx.lineWidth = 10;
-    ctx.beginPath();
-    ctx.roundRect(28, 28, w - 56, h - 56, 26);
-    ctx.stroke();
+    drawCartoonFrame(ctx, w, h);
+    drawCartoonText(ctx, name ?? "?", w / 2, h / 2 - 30, 58, w - 140);
 
+    // Étiquette "Image indisponible".
+    ctx.font = `600 30px ${CARTOON_FONT}`;
+    const label = "Image indisponible";
+    const labelWidth = ctx.measureText(label).width + 44;
+    ctx.fillStyle = PAPER;
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.roundRect(w / 2 - labelWidth / 2, h / 2 + 30, labelWidth, 52, 26);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = INK;
     ctx.textAlign = "center";
-    ctx.fillStyle = "#f5d94a";
-    ctx.font = "bold 56px system-ui, sans-serif";
-    ctx.fillText(name ?? "?", w / 2, h / 2 - 20, w - 100);
-    ctx.fillStyle = "rgba(216, 214, 240, 0.7)";
-    ctx.font = "32px system-ui, sans-serif";
-    ctx.fillText("Image indisponible", w / 2, h / 2 + 40);
+    ctx.textBaseline = "middle";
+    ctx.fillText(label, w / 2, h / 2 + 57);
   });
 }
 

@@ -15,11 +15,13 @@
 //   - controlsEnabled: false pour bloquer déplacement et regard (ex. pendant
 //                      la révélation d'une carte)
 
-import { Suspense, useCallback, useState } from "react";
+import { Suspense, useCallback, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import CameraController from "./CameraController";
 import FloatingIsland from "./FloatingIsland";
 import SkyScene from "./SkyScene";
+import TouchJoystick from "./TouchJoystick";
+import { useIsTouch } from "../hooks/useIsTouch";
 import { EYE_HEIGHT } from "../constants/world";
 import "./IslandScene.css";
 
@@ -33,6 +35,9 @@ export default function IslandScene({
 }) {
   const [showHint, setShowHint] = useState(true);
   const hideHint = useCallback(() => setShowHint(false), []);
+  // Sur écran tactile : joystick pour marcher, et rappel des gestes.
+  const isTouch = useIsTouch();
+  const touchMoveRef = useRef({ x: 0, y: 0 });
 
   return (
     <div className="island-scene">
@@ -56,16 +61,42 @@ export default function IslandScene({
             onStarClick={onStarClick}
           />
         </Suspense>
-        <CameraController enabled={controlsEnabled} onFirstMove={hideHint} />
+        <CameraController
+          enabled={controlsEnabled}
+          onFirstMove={hideHint}
+          touchMoveRef={touchMoveRef}
+        />
       </Canvas>
 
-      <p className={`island-scene__hint${showHint ? "" : " is-hidden"}`}>
-        <kbd>Z</kbd><kbd>Q</kbd><kbd>S</kbd><kbd>D</kbd> ou flèches pour marcher
-        <span aria-hidden="true"> · </span>
-        souris vers les bords pour regarder autour
-        <span aria-hidden="true"> · </span>
-        clic sur une étoile pour la révéler
+      {/* Masqué aussi pendant la révélation d'une carte, pour ne pas se
+          mêler à ses informations. */}
+      <p
+        className={`island-scene__hint${isTouch ? " is-touch" : ""}${
+          showHint && controlsEnabled ? "" : " is-hidden"
+        }`}
+      >
+        {isTouch ? (
+          <>
+            Joystick pour marcher
+            <span aria-hidden="true"> · </span>
+            glisse le doigt pour regarder autour
+            <span aria-hidden="true"> · </span>
+            touche une étoile pour la révéler
+          </>
+        ) : (
+          <>
+            <kbd>Z</kbd><kbd>Q</kbd><kbd>S</kbd><kbd>D</kbd> ou flèches pour marcher
+            <span aria-hidden="true"> · </span>
+            souris vers les bords pour regarder autour
+            <span aria-hidden="true"> · </span>
+            clic sur une étoile pour la révéler
+          </>
+        )}
       </p>
+
+      {/* Masqué pendant la révélation d'une carte, comme les autres
+          commandes. */}
+      {isTouch && controlsEnabled && <TouchJoystick inputRef={touchMoveRef} />}
     </div>
   );
 }

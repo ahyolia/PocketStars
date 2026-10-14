@@ -60,6 +60,10 @@ const HOVER_SCALE = 1.4;
 // grande que l'étoile elle-même.
 const HIT_RADIUS = STAR_SIZE * 0.75;
 
+// Au-delà de ce déplacement (px) entre l'appui et le relâchement, le geste
+// est un glisser pour regarder autour (écran tactile), pas un clic.
+const CLICK_TOLERANCE = 10;
+
 // Extrait la géométrie du modèle, y applique la transformation de son nœud
 // (échelle/rotation exportées depuis FBX), puis la recentre et la normalise
 // à STAR_SIZE. Partagée par toutes les étoiles.
@@ -148,6 +152,7 @@ function Star({ id, position, motion, geometry, onStarClick }) {
         ref={bodyRef}
         onClick={(e) => {
           e.stopPropagation();
+          if (e.delta > CLICK_TOLERANCE) return;
           onStarClick?.(id);
         }}
         onPointerOver={(e) => {

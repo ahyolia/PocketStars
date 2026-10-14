@@ -9,16 +9,20 @@
 //     (pour viser et cliquer une étoile sereinement) ; vers les bords, elle
 //     tourne dans cette direction, d'autant plus vite qu'on s'approche du
 //     bord. Le curseur reste libre pour cliquer sur les étoiles.
-//   - Sur écran tactile (pas de survol), on regarde en faisant glisser le
-//     doigt.
+//   - Sur écran tactile (pas de clavier ni de survol) : on marche avec le
+//     joystick virtuel (TouchJoystick, qui écrit dans `touchMoveRef`) et on
+//     regarde en faisant glisser un doigt sur la scène, les deux à la fois
+//     si on veut.
 // Le joueur ne peut pas sortir du plateau (ISLAND_RADIUS - EDGE_MARGIN).
 //
 // À utiliser à l'intérieur du Canvas r3f orchestré par IslandScene, dont la
 // caméra fixe la position de départ.
 //
 // Props attendues :
-//   - enabled     : false pour ignorer clavier et souris (ex. carte ouverte)
-//   - onFirstMove : callback appelé une fois, au premier déplacement
+//   - enabled      : false pour ignorer clavier, souris et tactile (ex. carte
+//                    ouverte)
+//   - onFirstMove  : callback appelé une fois, au premier déplacement
+//   - touchMoveRef : ref { x, y } du joystick tactile (facultatif)
 
 import { useEffect, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
@@ -76,7 +80,7 @@ function edgeStrength(value) {
   return Math.sign(value) * t * t * (3 - 2 * t);
 }
 
-export default function CameraController({ enabled = true, onFirstMove }) {
+export default function CameraController({ enabled = true, onFirstMove, touchMoveRef }) {
   const domElement = useThree((state) => state.gl.domElement);
 
   const pressedRef = useRef(new Set());
@@ -127,7 +131,9 @@ export default function CameraController({ enabled = true, onFirstMove }) {
       pointer.active = false;
       return;
     }
-    let touchDragging = false;
+    // Doigt qui fait tourner la vue : seul celui-ci est suivi, pour qu'un
+    // autre doigt (sur le joystick) ne fasse pas tourner la vue.
+    let lookPointerId = null;
     let lastX = 0;
     let lastY = 0;
 
@@ -144,7 +150,7 @@ export default function CameraController({ enabled = true, onFirstMove }) {
         pointer.active = true;
         return;
       }
-      if (!touchDragging) return;
+      if (e.pointerId !== lookPointerId) return;
       const look = lookRef.current;
       look.yaw += (e.clientX - lastX) * TOUCH_SENSITIVITY;
       look.pitch = MathUtils.clamp(
@@ -156,13 +162,13 @@ export default function CameraController({ enabled = true, onFirstMove }) {
       lastY = e.clientY;
     };
     const onPointerDown = (e) => {
-      if (e.pointerType === "mouse") return;
-      touchDragging = true;
+      if (e.pointerType === "mouse" || lookPointerId !== null) return;
+      lookPointerId = e.pointerId;
       lastX = e.clientX;
       lastY = e.clientY;
     };
-    const onPointerUp = () => {
-      touchDragging = false;
+    const onPointerUp = (e) => {
+      if (e.pointerId === lookPointerId) lookPointerId = null;
     };
     // Souris sortie de la fenêtre : la vue s'arrête de tourner.
     const onMouseOut = (e) => {
@@ -172,11 +178,13 @@ export default function CameraController({ enabled = true, onFirstMove }) {
     domElement.addEventListener("pointerdown", onPointerDown);
     window.addEventListener("pointermove", onPointerMove);
     window.addEventListener("pointerup", onPointerUp);
+    window.addEventListener("pointercancel", onPointerUp);
     document.addEventListener("mouseout", onMouseOut);
     return () => {
       domElement.removeEventListener("pointerdown", onPointerDown);
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("pointercancel", onPointerUp);
       document.removeEventListener("mouseout", onMouseOut);
       pointer.active = false;
     };
@@ -197,10 +205,15 @@ export default function CameraController({ enabled = true, onFirstMove }) {
     look.yaw += look.yawSpeed * delta;
     look.pitch = MathUtils.clamp(look.pitch + look.pitchSpeed * delta, MIN_PITCH, MAX_PITCH);
 
-    // Direction voulue, dans le repère du regard (à plat, sans le tangage).
-    const inputForward = (pressed.has("forward") ? 1 : 0) - (pressed.has("backward") ? 1 : 0);
-    const inputRight = (pressed.has("right") ? 1 : 0) - (pressed.has("left") ? 1 : 0);
-    const inputLength = Math.hypot(inputForward, inputRight) || 1;
+    // Direction voulue, dans le repère du regard (à plat, sans le tangage) :
+    // clavier et joystick s'additionnent, plafonnés à la vitesse de marche
+    // (le joystick à mi-course fait marcher à mi-vitesse).
+    const joystick = enabled ? touchMoveRef?.current : null;
+    const inputForward =
+      (pressed.has("forward") ? 1 : 0) - (pressed.has("backward") ? 1 : 0) + (joystick?.y ?? 0);
+    const inputRight =
+      (pressed.has("right") ? 1 : 0) - (pressed.has("left") ? 1 : 0) + (joystick?.x ?? 0);
+    const inputLength = Math.max(1, Math.hypot(inputForward, inputRight));
     const speed = WALK_SPEED * (pressed.has("run") ? RUN_MULTIPLIER : 1);
     const sin = Math.sin(look.yaw);
     const cos = Math.cos(look.yaw);

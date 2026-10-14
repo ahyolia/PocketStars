@@ -6,8 +6,10 @@
 //
 // Animation : la carte arrive de dos, petite, et tourne sur elle-même en
 // grandissant jusqu'à présenter son recto (révélation), puis oscille
-// doucement. L'utilisateur peut la faire pivoter à la souris
-// (PresentationControls) ; elle revient de face au relâchement.
+// doucement. L'utilisateur peut la faire pivoter à la souris ou au doigt
+// (PresentationControls), en glissant n'importe où sur l'écran et pas
+// seulement sur la carte : vue de profil, elle n'est plus qu'un mince filet
+// que le doigt quitterait aussitôt. Elle revient de face au relâchement.
 //
 // Les cartes rares reçoivent un calque holographique sur le recto
 // (holoMaterial.js), dont l'intensité dépend de la rareté (rarities.js).
@@ -244,6 +246,7 @@ function CardMesh({ front, holoStrength, onReady }) {
   return (
     <group scale={scale} position={[0, viewport.height * 0.06, 0]}>
       <PresentationControls
+        global
         cursor
         snap
         speed={1.5}

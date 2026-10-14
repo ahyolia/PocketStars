@@ -1,0 +1,20 @@
+{
+  "name": "Pocket Stars",
+  "short_name": "Pocket Stars",
+  "description": "Exploration 3D de cartes Pokémon sur une île flottante sous un ciel étoilé.",
+  "lang": "fr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "background_color": "#0b0a1f",
+  "theme_color": "#0b0a1f",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

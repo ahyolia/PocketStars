@@ -52,6 +52,10 @@
 
 body {
   margin: 0;
+  /* Couleur du ciel : visible derrière la barre d'état en plein écran. */
+  background: #0b0a1f;
+  /* Pas de rebond ni de "tirer pour rafraîchir" sur mobile. */
+  overscroll-behavior: none;
 }
 
 #root {

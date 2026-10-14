@@ -6,6 +6,7 @@ import SearchBar from './components/SearchBar'
 import { useCards } from './hooks/useCards'
 import { MAX_RESULTS, useCardSearch } from './hooks/useCardSearch'
 import { useCompanion } from './hooks/useCompanion'
+import { useAutoFullscreen } from './hooks/useAutoFullscreen'
 import {
   ERROR_LINES,
   STAR_CLICK_LINES,
@@ -23,6 +24,8 @@ function App() {
     selectCard,
     clearSelectedCard,
   } = useCards()
+
+  useAutoFullscreen()
 
   const [search, setSearch] = useState('')
   const searchResults = useCardSearch(search)

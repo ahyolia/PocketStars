@@ -54,12 +54,20 @@
   }
 }
 
-/* Tactile : le bas est pris par le joystick (gauche) et le compagnon
-   (droite) ; le rappel des gestes passe en haut, sous la barre de
-   recherche. */
+/* Tactile : en bas, entre le joystick (gauche) et le compagnon (droite). */
 .island-scene__hint.is-touch {
-  top: calc(84px + env(safe-area-inset-top));
-  right: 16px;
-  bottom: auto;
+  left: 168px;
+  right: 232px;
+  bottom: max(24px, env(safe-area-inset-bottom));
   text-align: center;
+}
+
+/* Téléphones : trop étroit entre les deux, le rappel passe juste au-dessus
+   du joystick et du compagnon. */
+@media (max-width: 600px) {
+  .island-scene__hint.is-touch {
+    left: 16px;
+    right: 16px;
+    bottom: calc(166px + env(safe-area-inset-bottom));
+  }
 }

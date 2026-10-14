@@ -123,6 +123,12 @@
   .poke-companion__bubble::after {
     right: 22px;
   }
+
+  /* Tant que le rappel des gestes tactiles est affiché au-dessus du
+     joystick, la bulle monte au-dessus de lui. */
+  body:has(.island-scene__hint.is-touch:not(.is-hidden)) .poke-companion__bubble {
+    margin-bottom: 110px;
+  }
 }
 
 /* Écrans bas (téléphone en paysage) : compagnon compact. */

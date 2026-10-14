@@ -12,7 +12,7 @@
 // tableau et /cards/:id renvoie directement l'objet carte.
 //
 // En cas de blocage CORS ou d'indisponibilité de l'API, repli local sur
-// public/data/cards.json.
+// public/data/cards.json (le filtre `name` y est alors appliqué localement).
 
 const API_BASE_URL = "https://api.tcgdex.net/v2/en";
 
@@ -34,7 +34,12 @@ export async function fetchCards(filters = {}) {
 
     const fallbackResponse = await fetch("/data/cards.json");
     const fallbackData = await fallbackResponse.json();
-    return { data: fallbackData, source: "fallback" };
+    const name = filters.name?.toLowerCase();
+    const data =
+      name && Array.isArray(fallbackData)
+        ? fallbackData.filter((c) => c.name?.toLowerCase().includes(name))
+        : fallbackData;
+    return { data, source: "fallback" };
   }
 }
 

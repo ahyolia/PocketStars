@@ -100,12 +100,9 @@ function App() {
         value={search}
         onFilter={setSearch}
         status={searchStatus}
+        onShuffle={handleShuffle}
         hidden={isRevealOpen}
-      >
-        <button type="button" onClick={handleShuffle}>
-          Shuffle
-        </button>
-      </SearchBar>
+      />
       <CardReveal
         card={selectedCard}
         loading={selectedCardLoading}

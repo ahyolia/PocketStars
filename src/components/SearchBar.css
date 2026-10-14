@@ -6,7 +6,7 @@
   top: max(16px, env(safe-area-inset-top));
   left: env(safe-area-inset-left);
   right: env(safe-area-inset-right);
-  z-index: 5;
+  z-index: 6;
   display: flex;
   justify-content: flex-start;
   padding: 0 16px;
@@ -82,7 +82,8 @@
 }
 
 /* Bouton "bonbon" : s'enfonce au clic (l'ombre disparaît). */
-.search-bar__panel button {
+.search-bar__shuffle,
+.search-bar__round {
   flex-shrink: 0;
   padding: 7px 18px;
   border: var(--cartoon-border);
@@ -101,16 +102,19 @@
     background 0.15s;
 }
 
-.search-bar__panel button:hover {
+.search-bar__shuffle:hover,
+.search-bar__round:hover {
   background: var(--cartoon-sun-light);
 }
 
-.search-bar__panel button:active {
+.search-bar__shuffle:active,
+.search-bar__round:active {
   box-shadow: 0 0 0 var(--cartoon-ink);
   transform: translateY(1px);
 }
 
-.search-bar__panel button:focus-visible,
+.search-bar__shuffle:focus-visible,
+.search-bar__round:focus-visible,
 .search-bar__panel:focus-within {
   outline: 3px solid #a77bff;
   outline-offset: 2px;
@@ -119,4 +123,76 @@
 /* Le focus du champ est signalé sur tout le panneau (ci-dessus). */
 .search-bar__input:focus-visible {
   outline: none;
+}
+
+/* Colonne de boutons ronds (petits écrans seulement). */
+.search-bar__rail {
+  display: none;
+}
+
+.search-bar__round {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  padding: 0;
+  box-shadow: 0 4px 0 var(--cartoon-shadow-color);
+}
+
+.search-bar__round svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* Recherche active alors que la barre est repliée. */
+.search-bar__badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--cartoon-ink);
+  border-radius: 50%;
+  background: #a77bff;
+}
+
+/* Petits écrans : barre repliée en boutons sur le côté gauche, déployée
+   par-dessus en pleine largeur quand on appuie sur la loupe. */
+@media (max-width: 600px) {
+  .search-bar__rail {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    pointer-events: auto;
+  }
+
+  .search-bar__panel {
+    display: none;
+  }
+
+  .search-bar.is-expanded .search-bar__rail {
+    display: none;
+  }
+
+  .search-bar.is-expanded .search-bar__panel {
+    display: flex;
+    max-width: none;
+    animation: search-bar-open 0.2s ease-out;
+  }
+
+  .search-bar.is-expanded .search-bar__panel::before {
+    margin-left: 6px;
+  }
+
+  /* Shuffle est déjà dans la colonne de boutons. */
+  .search-bar__shuffle {
+    display: none;
+  }
+}
+
+@keyframes search-bar-open {
+  from { opacity: 0; transform: scaleX(0.4); transform-origin: left center; }
+  to { opacity: 1; transform: none; }
 }

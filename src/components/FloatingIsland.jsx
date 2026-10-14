@@ -19,7 +19,7 @@ import { ISLAND_RADIUS } from "../constants/world";
 
 const PLATEAU_THICKNESS = 2;
 const BASE_DEPTH = 28;
-const GROUND_COLOR = "#46557a";
+const GROUND_COLOR = "#5c3d63"; // mauve aubergine
 const ROCK_COLORS = ["#4a3d6e", "#3d4a6e", "#5a4d80"];
 const ROCK_COUNT = 70;
 const TEXTURE_REPEAT = 24;
@@ -47,7 +47,7 @@ function createGroundTexture() {
   const random = seededRandom(42);
   for (let i = 0; i < 260; i++) {
     const light = random() < 0.5;
-    ctx.fillStyle = light ? "rgba(140, 160, 220, 0.18)" : "rgba(20, 15, 50, 0.22)";
+    ctx.fillStyle = light ? "rgba(200, 150, 205, 0.18)" : "rgba(40, 14, 45, 0.22)";
     ctx.beginPath();
     ctx.arc(random() * size, random() * size, 1 + random() * 5, 0, Math.PI * 2);
     ctx.fill();
